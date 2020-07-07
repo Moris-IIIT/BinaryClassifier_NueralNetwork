@@ -1,0 +1,104 @@
+clc;
+clear variables;
+close all;
+DataX = load('trainX.mat');
+DataY = load('trainY.mat');
+trainDataX = DataX.trainDataX;
+trainDataY = DataY.trainDataY;
+trainDataX = trainDataX/255;
+%/*---------Training the model --------------*/
+Parameters = model(trainDataX,trainDataY,2000,0.005);
+%/* ------------- Functions for NN ----------------*/
+%W = randi(3,3,1); b=0.1; X = randi(4,3,100); Y = randi([0,1],1,100); % Sample Input Parameters
+%[P,G,C] = Optimize(W,b,X,Y,500,0.01);
+function Parameters= initializeWithZeros(dimension)
+%initilizeWithZeros : Initiliazie Parameters with respect to the dimention
+%   Input : Dimension(no. of training examples or parameters)
+%   Output : Zeros vecotr of parameter w and b.
+Parameters = struct();
+Parameters.w = zeros(dimension,1);
+Parameters.b = 0;
+end
+function Sigma = Sigmoid(value)
+% Compute the sigmoid of value
+%     Arguments:
+%     value -- A scalar or array of any size.
+%     Return:
+%     Sigma -- Sigmoid(value)
+Sigma = 1./(1+exp(-value));
+end
+function [gradient,cost] = Propagate(w,b,x,y)
+% Implement the cost function and its gradient for the propagation explained above
+% 
+%     Arguments:
+%     w -- weights, a  array of size (num_px * num_px * 3, 1)
+%     b -- bias, a scalar
+%     X -- data of size (num_px * num_px * 3, number of examples)
+%     Y -- true "label" vector (containing 0 if non-cat, 1 if cat) of size (1, number of examples)
+% 
+%     Return:
+%     cost -- negative log-likelihood cost for logistic regression
+%     dw -- gradient of the loss with respect to w, thus same shape as w
+%     db -- gradient of the loss with respect to b, thus same shape as b
+m = size(x,1);
+A = Sigmoid((w.')*x + b);
+%disp(sum(y.*log(A) +(1-y).*log((1-A))));
+cost = -1/m*(sum(y.*log(A) +(1-y).*log((1-A))));
+% backward propagation;
+dw = 1/m*(x*(A-y).');
+db = 1/m*(sum(A-y));
+gradient = struct();
+gradient.dw = dw;
+gradient.db = db;
+end
+function [ parameter,gradient,cost ] = Optimize(w,b,x,y,iterations,learningRate)
+% This function optimizes w and b by running a gradient descent algorithm
+%     
+%     Arguments:
+%     w -- weights, a numpy array of size (num_px * num_px * 3, 1)
+%     b -- bias, a scalar
+%     X -- data of shape (num_px * num_px * 3, number of examples)
+%     Y -- true "label" vector (containing 0 if non-cat, 1 if cat), of shape (1, number of examples)
+%     num_iterations -- number of iterations of the optimization loop
+%     learning_rate -- learning rate of the gradient descent update rule
+%     print_cost -- True to print the loss every 100 steps
+%     
+%     Returns:
+%     params -- dictionary containing the weights w and bias b
+%     grads -- dictionary containing the gradients of the weights and bias with respect to the cost function
+%     costs -- list of all the costs computed during the optimization, this will be used to plot the learning curve.
+costs = [];
+j=1;
+for i =1:iterations
+    [gradient,cost] = Propagate(w,b,x,y);
+    % Retrieve Parameters;
+    dw = gradient.dw;
+    db = gradient.db;
+    % Update Parameters;
+    w = w - learningRate*dw;
+    b = b - learningRate*db;
+    if mod(i,100) ==0
+        costs(j) = cost;
+        j = j+1;
+        fprintf('The iteration : %d and the cost is %.8f \n',i,cost);
+    end
+end
+parameter=struct();
+parameter.w = w;
+parameter.b = b;
+end
+function ModelParameter = model(X,Y,iterations,learningRate)
+dim = size(X,1); % Find dimension of parameters
+%disp(size(X));
+%disp(size(Y));
+params = initializeWithZeros(dim); % Initialize with zeros.
+w = params.w; 
+b = params.b;
+%disp(size(w));
+[params,gradient,cost] = Optimize(w,b,X,Y,iterations,learningRate);
+ModelParameter.w = params.w;
+ModelParameter.b = params.b;
+ModelParameter.cost = cost;
+ModelParameter.gradient = gradient;
+end
+
