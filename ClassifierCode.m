@@ -1,13 +1,22 @@
 clc;
 clear variables;
 close all;
+% Load all the data into MATLAB
+fprintf('[INFO] Loading the Data.\n');
 DataX = load('trainX.mat');
 DataY = load('trainY.mat');
+TestX = load('testX.mat');
+TestY = load('testY.mat');
+% Load the data into variables
 trainDataX = DataX.trainDataX;
 trainDataY = DataY.trainDataY;
+testDataX = TestX.testDataX;
+testDataY = TestY.testDataY;
 trainDataX = trainDataX/255;
+testDataY = testDataY/255;
+fprintf('[INFO] Started Training the model.\n');
 %/*---------Training the model --------------*/
-Parameters = model(trainDataX,trainDataY,2000,0.005);
+Parameters = model(trainDataX,trainDataY,testDataX,testDataY,1000,0.005);
 %/* ------------- Functions for NN ----------------*/
 %W = randi(3,3,1); b=0.1; X = randi(4,3,100); Y = randi([0,1],1,100); % Sample Input Parameters
 %[P,G,C] = Optimize(W,b,X,Y,500,0.01);
@@ -87,7 +96,25 @@ parameter=struct();
 parameter.w = w;
 parameter.b = b;
 end
-function ModelParameter = model(X,Y,iterations,learningRate)
+function Prediction = Predict(w,b,X)
+%     Predict whether the label is 0 or 1 using learned logistic regression parameters (w, b)
+%     
+%     Arguments:
+%     w -- weights, a array of size (num_px * num_px * 3, 1)
+%     b -- bias, a scalar
+%     X -- data of size (num_px * num_px * 3, number of examples)
+%     
+%     Returns:
+%     Y_prediction -- a  array (vector) containing all predictions (0/1) for the examples in X
+m = size(X,2);
+Prediction = zeros(1,m);
+A = Sigmoid((w.')*X +b);
+A(A>=0.5)=1;
+A(A<0.5)=0;
+Prediction = A;
+end
+
+function ModelParameter = model(X,Y,Xtest,Ytest,iterations,learningRate)
 dim = size(X,1); % Find dimension of parameters
 %disp(size(X));
 %disp(size(Y));
@@ -100,5 +127,12 @@ ModelParameter.w = params.w;
 ModelParameter.b = params.b;
 ModelParameter.cost = cost;
 ModelParameter.gradient = gradient;
+% Calculating Training and TestingAccuracy
+DataPredictionTrain = Predict(params.w,params.b,X);
+DataPredictionTest = Predict(params.w,params.b,Xtest);
+TrainAccuracy = (100 - mean(abs(DataPredictionTrain-Y))*100);
+TestAccuracy = (100 - mean(abs(DataPredictionTest-Ytest))*100);
+fprintf('The training Accuracy is : %.3f \n',TrainAccuracy);
+fprintf('The testing Accuracy is : %.3f \n',TestAccuracy);
 end
 
